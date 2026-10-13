@@ -34,6 +34,14 @@ def main(argv=None):
     p_batch.add_argument("-i", "--input", required=True)
     p_batch.add_argument("-o", "--output", default="results.csv")
 
+    # Clinical timestamp worksheet (does not determine clinical compliance)
+    p_timing = subparsers.add_parser("timing", help="Calculate de-identified antibiotic timing references")
+    p_timing.add_argument("--recognition", required=True, help="ISO-8601 timestamp with explicit UTC offset")
+    p_timing.add_argument("--pathway", required=True, choices=["urgent", "possible"])
+    p_timing.add_argument("--antibiotic")
+    p_timing.add_argument("--cultures")
+    p_timing.add_argument("--lactate")
+
     # Verify Audit
     subparsers.add_parser("verify-audit", help="Verify HMAC audit trail integrity")
 
@@ -43,6 +51,16 @@ def main(argv=None):
     p_serve.add_argument("--port", type=int, default=8000)
 
     args = parser.parse_args(argv)
+
+    if args.command == "timing":
+        from bundle_timing import evaluate_timing
+        try:
+            result = evaluate_timing(args.recognition, args.pathway, antibiotic=args.antibiotic,
+                                     cultures=args.cultures, lactate=args.lactate)
+        except ValueError as exc:
+            parser.error(str(exc))
+        print(json.dumps(result, indent=2))
+        return 0
 
     if args.command == "audit":
         payload = SystemTaskPayload(
