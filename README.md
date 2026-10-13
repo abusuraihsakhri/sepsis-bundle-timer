@@ -1,198 +1,71 @@
 # Sepsis Bundle Timer
 
-> **Domain:** Privacy-Preserving Healthcare & Federated Computing  
-> **Reference Guidelines & Standards:** `HIPAA Safe Harbor §164.514 & Differential Privacy RDP`
+A de-identified, browser-based timestamp worksheet and Python timing utility for adult sepsis quality-improvement exercises. The browser app works without a server or Python runtime.
 
-<div align="center">
+**Clinical limitation:** This is **not** a validated clinical decision-support device, formal SEP-1 compliance calculator, or medical record. Never delay assessment or treatment to use it. Do not enter patient names, MRNs, or other identifiers. Select the time zero and the applicable pathway using clinical judgment and local protocol.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+## Browser application
 
-</div>
+The browser UI is in [web/index.html](web/index.html). GitHub Pages is configured through `.github/workflows/pages.yml` to publish the contents of `web/` after changes reach `master`. Open the deployed Pages environment when its deployment has succeeded; a public URL is not asserted until it is verified.
 
----
-
-## 📖 What It Does
-
-Sepsis Bundle Compliance Timer — Surviving Sepsis 1h/3h bundle compliance timer from triage, lactate, and antibiotic timestamps. Provides a stdlib parser/mapper with batch CSV processing and single-lookup capabilities.
-
-The project includes:
-- **Core lookup engine** (`sepsis_timer.py`): Token-overlap + substring scoring for sepsis-related terms (lactate, antibiotics, fluids, vasopressors, etc.)
-- **Enterprise agent framework** (`agents/`): Multi-worker evaluation system with PHI guard, HMAC-SHA256 audit trail, and FastAPI REST API
-- **CLI** (`cli.py`): Command-line interface for audit, chat, batch processing, and server modes
-- **Simulator** (`simulator.py`): High-throughput stress testing with adversarial PHI injection
-
----
-
-## ⚙️ Key Capabilities & Algorithmic Modules
-
-### 🔬 Core Functions
-
-- **`lookup(query)`**: Single lookup using token overlap + substring scoring (no external dependencies). Returns top hits from a built-in sepsis terminology bank.
-- **`process_csv(inp, out)`**: Batch CSV processing — reads input, looks up each row's query column, and writes enriched results.
-- **`build_parser()`**: CLI argument parser for single and batch modes.
-
-### 🛡️ Security & Audit
-
-- **`PHIGuard`**: Zero-PHI outbound interceptor — blocks SSNs, MRNs, phone numbers, emails, and patient identifiers.
-- **`AuditTrail`**: Tamper-evident HMAC-SHA256 chained audit log for every evaluation and state transition.
-- **`SystemSupervisor`**: Multi-worker orchestrator with PHI validation on all inputs.
-
----
-
-## 💻 Installation
+To use the app locally, open `web/index.html` in a modern browser or run:
 
 ```bash
-# Clone the repository
-git clone https://github.com/abusuraihsakhri/sepsis-bundle-timer.git
-cd sepsis-bundle-timer
-
-# Install dependencies
-pip install fastapi uvicorn pydantic pytest
-
-# Set audit secret (recommended for production)
-export AUDIT_SECRET_KEY="your-secret-key-here"
+python -m http.server 8000 --directory web
+# Visit http://localhost:8000/
 ```
 
----
+Set a recognition/suspicion timestamp and choose an adult assessment pathway. The worksheet displays elapsed time and a reference deadline; optionally record initial lactate, blood-culture collection and antibiotic administration timestamps. It indicates whether the recorded cultures preceded antibiotics, and exports a local CSV.
 
-## 🚀 Usage
+The pathway options reflect the **2026 Surviving Sepsis Campaign** adult guideline:
+- **Shock or probable/definite sepsis:** administer antimicrobials immediately, ideally within **1 hour** of recognition.
+- **Possible sepsis without shock:** rapidly investigate; if substantial infection concern persists, administer antimicrobials within **3 hours** of initial suspicion. This is conditional and must not delay indicated therapy.
 
-### 1. Single Lookup (Core Module)
+Only the antibiotic reference time is calculated. Fluid resuscitation, vasopressors, lactate reassessment, antibiotic appropriateness, contraindications and formal quality-measure criteria are not assessed. These timestamps do **not** establish clinical eligibility or protocol compliance. Verify the workstation clock, local timezone and daylight-saving transitions before relying on any timestamp.
+
+**References:** [SCCM Surviving Sepsis Campaign 2026 guidelines](https://sccm.org/clinical-resources/guidelines/guidelines/surviving-sepsis-campaign-international-guidelines-for-management-of-sepsis-and-septic-shock-2026).
+
+## Python timing API and CLI
+
+`bundle_timing.py` is standard-library-only. All Python timestamps **must include an explicit timezone offset**.
+
 ```bash
-python -c "from sepsis_timer import lookup; print(lookup('lactate'))"
+python -m bundle_timing --recognition 2026-10-13T10:00:00+00:00 --pathway urgent --antibiotic 2026-10-13T10:45:00+00:00
 ```
 
-### 2. Batch CSV Processing (Core Module)
-```bash
-python -c "from sepsis_timer import process_csv; process_csv('sample.csv', 'output.csv')"
-```
+Or use `evaluate_timing(recognition, pathway, antibiotic=None, cultures=None, lactate=None, as_of=None)` directly. The existing `cli.py timing` command offers the same parameters when optional server dependencies are installed.
 
-### 3. Enterprise CLI — Audit
-```bash
-python cli.py audit --task-id TASK-001 --primary 28.5 --secondary 14.2 --critical --status DISCORDANT
-```
+## Existing auxiliary tools
 
-### 4. Enterprise CLI — Batch
-```bash
-python cli.py batch -i sample.csv -o results.csv
-```
+The repository retains the original `sepsis_timer.py` terminology lookup and batch CSV enrichment, `agents/` orchestration and mock responses, `enrichment.py` experimental thresholds, and FastAPI endpoints. These modules are **not validated clinical sepsis scoring or treatment engines**. In particular, the agent's generic numeric thresholds and mock replies must not be interpreted as clinical decisions.
 
-### 5. Enterprise CLI — Verify Audit Trail
 ```bash
-python cli.py verify-audit
-```
-
-### 6. Enterprise CLI — Chat
-```bash
-python cli.py chat "What is the lactate threshold?"
-```
-
-### 7. Start REST API Server
-```bash
+python sepsis_timer.py single lactate
+python sepsis_timer.py batch --input sample.csv --output output.csv
+python cli.py audit --task-id TEST-001
 python cli.py serve --host 127.0.0.1 --port 8000
 ```
 
-### 8. Run Simulation
-```bash
-python simulator.py 100
-```
+## Development and tests
 
----
-
-## 📐 Lookup Scoring Logic
-
-```text
-score = 0
-if key in query:           score += 10    # substring match
-overlap = tokens(query) ∩ tokens(label)
-score += overlap * 2                      # token overlap bonus
-```
-
----
-
-## 🛡️ Security Features
-
-* **Zero-PHI Outbound Interceptor:** Active regex inspection blocking SSNs, MRNs, phone numbers, emails, DOB, and patient names.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation.
-* **Path Traversal Protection:** All file paths are resolved and validated before access.
-* **Input Validation:** All public functions validate inputs and raise clear errors.
-* **Ephemeral Key Fallback:** When `AUDIT_SECRET_KEY` is not set, a random key is generated (with a warning) instead of using a hardcoded default.
-
----
-
-## 🧪 Testing & Verification
-
-Run the full test suite:
+Requirements: Python 3.10+ for the legacy agent API; Node.js 18+ for browser test scripts (not required to use the web app).
 
 ```bash
-pytest -v
-```
-
-Run with coverage:
-
-```bash
-pytest -v --cov=sepsis_timer --cov=agents
-```
-
-Execute high-throughput batch simulation benchmarks:
-
-```bash
-python simulator.py --tasks 1000 --concurrency 8
-```
-
----
-
-## 🐳 Container Deployment
-
-```bash
-# Build and run with Docker Compose
-export AUDIT_SECRET_KEY="your-production-secret-key"
-docker-compose up --build
-
-# Or with Docker directly
+python -m pip install -r requirements.txt pytest
+python -m pytest -q
+node --test web/timing.test.cjs
+node --check web/app.js
 docker build -t sepsis-bundle-timer .
-docker run -p 8000:8000 -e AUDIT_SECRET_KEY="your-key" sepsis-bundle-timer
 ```
 
----
+`docker compose up --build` runs the FastAPI server on port 8000. The API is separate from the static browser application. A production server requires appropriate access controls, operational monitoring and a stable secret key (`AUDIT_SECRET_KEY`); the included server is not hardened for handling identifiable clinical data.
 
-## 📁 Project Structure
+## Privacy and security
 
-```
-sepsis-bundle-timer/
-├── agents/                  # Enterprise agent framework
-│   ├── __init__.py
-│   ├── api.py              # FastAPI REST endpoints
-│   ├── base.py             # PHI guard, audit trail, security
-│   ├── learning.py         # Bayesian calibration engine
-│   ├── llm_factory.py      # LLM provider factory
-│   ├── metrics.py          # Prometheus metrics collector
-│   ├── models.py           # Pydantic data models
-│   ├── streamer.py         # WebSocket telemetry broadcaster
-│   ├── supervisor.py       # Multi-worker orchestrator
-│   └── workers.py          # Specialized evaluation workers
-├── web/
-│   └── index.html          # Web interface
-├── cli.py                  # Enterprise CLI entry point
-├── sepsis_timer.py         # Core lookup and CSV processing
-├── simulator.py            # Stress testing simulator
-├── enrichment.py           # Extended clinical feature engines
-├── test_sepsis_timer.py    # Core module tests
-├── test_sepsis_timer_extended.py  # Extended core tests
-├── test_agents.py          # Agent framework tests
-├── sample.csv              # Sample input data
-├── Dockerfile              # Container build config
-├── docker-compose.yml      # Container orchestration
-└── openapi_spec.json       # OpenAPI 3.1 specification
-```
+The **static browser app** does not make network requests or use browser storage. Data remains in browser memory and is discarded on reload; CSV export writes to the local device only at your request. Do not enter personal health information. The optional backend and legacy batch tools process input on the system running them and may hold data in memory; they have a limited regex-based identifier screen, **not** comprehensive HIPAA de-identification. The HMAC audit trail is in-memory unless persistence is implemented separately. Do not expose the API to untrusted networks.
 
----
+Browser support: recent Chrome/Edge, Firefox, and Safari with JavaScript and `datetime-local` support. No Pyodide or server-side Python is used for the GitHub Pages app.
 
-## 📄 License
+## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+[MIT](LICENSE).
