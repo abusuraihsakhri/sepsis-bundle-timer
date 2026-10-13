@@ -1,5 +1,5 @@
 """
-Inference Engine supporting local Ollama, Claude, OpenAI, and deterministic Mock with Zero-PHI checks.
+Deterministic mock response adapter. Provider labels are aliases, not live integrations.
 """
 from typing import Dict, Any, Optional
 from .base import PHIGuard
