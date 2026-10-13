@@ -13,7 +13,7 @@ supervisor = SystemSupervisor(model_provider="mock")
 
 app = FastAPI(
     title="Sepsis Bundle Timer API",
-    description="Enterprise Distributed Component Platform (Privacy-Preserving Federated Healthcare & FHE)",
+    description="Experimental generic agent audit service; not validated for clinical use",
     version="3.0.0-ENTERPRISE",
 )
 
@@ -30,7 +30,7 @@ class ChatRequest(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "HEALTHY", "service": "sepsis-bundle-timer", "domain": "Privacy-Preserving Federated Healthcare & FHE", "standard": "HIPAA Safe Harbor §164.514 / Google SecAgg Standards", "version": "3.0.0-ENTERPRISE"}
+    return {"status": "HEALTHY", "service": "sepsis-bundle-timer", "domain": "Experimental generic metric evaluation", "standard": "No clinical or de-identification certification", "version": "3.0.0-ENTERPRISE"}
 
 
 @app.get("/metrics")
