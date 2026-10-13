@@ -24,7 +24,17 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install fastapi uvicorn pydantic pytest
+        pip install -r requirements.txt pytest
+
+    - name: Test browser scripts
+      run: |
+        node --check web/app.js
+        node --check web/timing.js
+        node --test web/timing.test.cjs
+
+    - name: Check static asset references
+      run: |
+        python -c "from pathlib import Path; page=Path('web/index.html').read_text(); assert all((Path('web')/p).is_file() for p in ('timing.js','app.js','styles.css')); assert 'fetch(' not in Path('web/app.js').read_text(); assert 'simulated' not in page.lower()"
 
     - name: Run Pytest Suite
       run: |
