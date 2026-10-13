@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Sepsis Bundle Timer API",
-    "description": "Enterprise Distributed Component Platform (Clinical & Cryptographic AI) adhering to CAP / CLSI / NIST Standards.",
+    "description": "Legacy general-purpose audit API with heuristic identifier screening and in-memory HMAC logs; not validated for clinical decisions.",
     "version": "3.0.0-ENTERPRISE",
     "contact": {
       "name": "Dr. Abu Suraih Sakhri",
@@ -22,10 +22,10 @@
     },
     "/metrics": {
       "get": {
-        "summary": "Prometheus operational metrics",
+        "summary": "Return JSON process counters (not Prometheus text)",
         "responses": {
           "200": {
-            "description": "Prometheus text metrics"
+            "description": "JSON process counters"
           }
         }
       }
@@ -76,7 +76,7 @@
     },
     "/api/chat": {
       "post": {
-        "summary": "Air-gapped supervisory conversational assistant",
+        "summary": "Return deterministic mock response; no clinical verification",
         "requestBody": {
           "content": {
             "application/json": {
@@ -103,7 +103,7 @@
     },
     "/api/audit/logs": {
       "get": {
-        "summary": "Retrieve and cryptographically verify HMAC audit trail",
+        "summary": "View in-memory audit log (server operator only; restrict API access)",
         "responses": {
           "200": {
             "description": "Cryptographic audit trail"
