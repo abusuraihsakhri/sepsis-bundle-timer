@@ -1,7 +1,7 @@
 """
 Pydantic v2 schemas and data definitions for Sepsis Bundle Timer.
-Domain: Privacy-Preserving Federated Healthcare & FHE
-Standard: HIPAA Safe Harbor §164.514 / Google SecAgg Standards
+Domain: Generic metric audit prototype
+Standard: No clinical certification or HIPAA de-identification guarantee
 """
 import datetime
 from enum import Enum
@@ -39,7 +39,7 @@ class AgentAlert(BaseModel):
     summary: str
     technical_details: str
     actionable_remediation: str
-    standard_reference: str = "HIPAA Safe Harbor §164.514 / Google SecAgg Standards"
+    standard_reference: str = "No clinical certification or HIPAA de-identification guarantee"
     timestamp: str = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
 
     def to_dict(self) -> Dict[str, Any]:
@@ -49,7 +49,7 @@ class AgentAlert(BaseModel):
 class ConsensusDossier(BaseModel):
     dossier_id: str
     system_slug: str = "sepsis-bundle-timer"
-    domain: str = "Privacy-Preserving Federated Healthcare & FHE"
+    domain: str = "Generic metric audit prototype"
     task_id: str
     target_identifier: str
     overall_urgency: UrgencyLevel
@@ -57,7 +57,7 @@ class ConsensusDossier(BaseModel):
     total_alerts: int
     critical_alerts_count: int
     alerts: List[AgentAlert]
-    standard_reference: str = "HIPAA Safe Harbor §164.514 / Google SecAgg Standards"
+    standard_reference: str = "No clinical certification or HIPAA de-identification guarantee"
     consensus_summary: str
     audit_hash: str
     timestamp: str = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
