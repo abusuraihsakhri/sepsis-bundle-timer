@@ -3,8 +3,9 @@ FastAPI REST API Server for Sepsis Bundle Timer.
 """
 from typing import Dict, Any, List
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from .base import AuditLogger, PHIGuard
+from .base import AuditLogger, PHIGuard, SecurityException
 from .models import SystemTaskPayload, ConsensusDossier
 from .supervisor import SystemSupervisor
 
@@ -15,6 +16,12 @@ app = FastAPI(
     description="Enterprise Distributed Component Platform (Privacy-Preserving Federated Healthcare & FHE)",
     version="3.0.0-ENTERPRISE",
 )
+
+
+@app.exception_handler(SecurityException)
+async def identifier_rejection(request, exc):
+    return JSONResponse(status_code=422, content={"detail": "Input contains a potentially identifying value."})
+
 
 
 class ChatRequest(BaseModel):
