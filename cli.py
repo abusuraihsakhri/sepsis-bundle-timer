@@ -34,6 +34,14 @@ def main(argv=None):
     p_batch.add_argument("-i", "--input", required=True)
     p_batch.add_argument("-o", "--output", default="results.csv")
 
+    # Clinical timestamp worksheet (does not determine clinical compliance)
+    p_timing = subparsers.add_parser("timing", help="Calculate de-identified antibiotic timing references")
+    p_timing.add_argument("--recognition", required=True, help="ISO-8601 timestamp with explicit UTC offset")
+    p_timing.add_argument("--pathway", required=True, choices=["urgent", "possible"])
+    p_timing.add_argument("--antibiotic")
+    p_timing.add_argument("--cultures")
+    p_timing.add_argument("--lactate")
+
     # Verify Audit
     subparsers.add_parser("verify-audit", help="Verify HMAC audit trail integrity")
 
@@ -43,6 +51,16 @@ def main(argv=None):
     p_serve.add_argument("--port", type=int, default=8000)
 
     args = parser.parse_args(argv)
+
+    if args.command == "timing":
+        from bundle_timing import evaluate_timing
+        try:
+            result = evaluate_timing(args.recognition, args.pathway, antibiotic=args.antibiotic,
+                                     cultures=args.cultures, lactate=args.lactate)
+        except ValueError as exc:
+            parser.error(str(exc))
+        print(json.dumps(result, indent=2))
+        return 0
 
     if args.command == "audit":
         payload = SystemTaskPayload(
@@ -56,7 +74,7 @@ def main(argv=None):
         dossier = supervisor.process_task(payload)
         print("=" * 80)
         print(f"  SEPSIS BUNDLE TIMER")
-        print(f"  Domain: Privacy-Preserving Federated Healthcare & FHE | Standard: HIPAA Safe Harbor §164.514 / Google SecAgg Standards")
+        print(f"  Generic metric audit prototype; not validated clinical decision support")
         print(f"  Dossier ID: {dossier.dossier_id} | Urgency: [{dossier.overall_urgency.value}]")
         print("=" * 80)
         for a in dossier.alerts:
@@ -94,7 +112,7 @@ def main(argv=None):
                 primary_metric=float(r.get("primary_metric", 15.0)),
                 secondary_metric=float(r.get("secondary_metric", 5.0)),
                 status_descriptor=r.get("status_descriptor", "NOMINAL"),
-                is_critical_flag=bool(r.get("is_critical_flag", False)),
+                is_critical_flag=str(r.get("is_critical_flag", "false")).strip().lower() in ("true", "1", "yes"),
             )
             dossier = supervisor.process_task(payload)
             row_dict = dict(r)

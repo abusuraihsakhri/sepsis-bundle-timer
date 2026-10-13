@@ -163,3 +163,23 @@ class TestSupervisor:
         )
         dossier = supervisor.process_task(payload)
         assert dossier.dossier_id in supervisor.dossier_registry
+
+def test_audit_integrity_detects_signed_field_tampering():
+    trail = AuditTrail(secret_key="test-key-for-unit-tests")
+    trail.log("tester", "unit", "EVENT_1", {"safe": 1})
+    trail.logs[0]["event_type"] = "ALTERED"
+    assert trail.verify_integrity() is False
+
+
+def test_audit_trail_snapshot_is_immutable_from_caller():
+    trail = AuditTrail(secret_key="test-key-for-unit-tests")
+    trail.log("tester", "unit", "EVENT_1", {"safe": 1})
+    snapshot = trail.get_trail()
+    snapshot[0]["event_type"] = "ALTERED"
+    assert trail.verify_integrity() is True
+
+
+def test_nonfinite_metric_is_rejected():
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError):
+        SystemTaskPayload(task_id="T-1", target_identifier="KEY-1", primary_metric=float("nan"))

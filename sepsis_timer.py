@@ -56,12 +56,12 @@ def lookup(query: str) -> Dict[str, Any]:
         score += overlap * 2
         scored.append((score, label))
     scored.sort(reverse=True)
-    top = scored[0] if scored else (0, "no match")
+    top = scored[0] if scored and scored[0][0] > 0 else (0, "no match")
     return {"query": query, "top_hit": top[1], "score": top[0], "all": scored[:3]}
 
 
 def _validate_path(path_str: str, must_exist: bool = False) -> pathlib.Path:
-    """Resolve and validate a file path, preventing directory traversal."""
+    """Resolve a local file path; the invoking OS account controls filesystem access."""
     p = pathlib.Path(path_str).resolve()
     if must_exist and not p.is_file():
         raise FileNotFoundError(f"Input file not found: {path_str}")

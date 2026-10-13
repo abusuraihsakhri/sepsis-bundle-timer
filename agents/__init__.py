@@ -1,7 +1,7 @@
 """
-Sepsis Bundle Timer — Enterprise Automated Analytical Suite.
-Domain: Privacy-Preserving Federated Healthcare & FHE
-Standard: HIPAA Safe Harbor §164.514 / Google SecAgg Standards
+Sepsis Bundle Timer — Experimental generic metric evaluation suite.
+Domain: Generic metric audit prototype
+Standard: No clinical or de-identification certification
 
 """
 __version__ = "3.0.0-ENTERPRISE"
